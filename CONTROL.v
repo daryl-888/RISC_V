@@ -29,7 +29,7 @@ module CONTROL (
     // 1 = branch/jump base is the PC; 0 = base is rs1. Only JALR uses rs1.
     // NOT a don't-care for ordinary instructions: BRANCH_JUMP computes
     // next PC = 4 + base every cycle, so the base must be the PC.
-    assign oPcSrc    = (iOpcode != JALR);
+    assign oPcSrc    = (iOpcode == JALR);
 
     assign oMemRd    = (iOpcode == LOAD);
     assign oMemWr    = (iOpcode == STORE);

@@ -32,13 +32,11 @@ module ALU_CONTROL (
 
     always @(*) begin
         case (iAluOp)
-            // Loads and stores: the ALU's only job is the address, rs1 + imm.
-            // funct3 says the SIZE (byte/half/word) but that's DATA_MEMORY's
-            // problem, not the ALU's — so we ignore funct3 entirely here.
+
             LOAD:  oAluCtrl = ADD;
             STORE: oAluCtrl = ADD;
 
-            // R-type: funct7[5] + funct3 IS the ALU code (see green card)
+            // R-type: funct7[5] + funct3
             REG_ARTH: oAluCtrl = {iFunct7[5], iFunct3};
 
             IMM_ARTH: oAluCtrl = (iFunct3 == 3'b001 || iFunct3 == 3'b101)  // is it a shift?
@@ -52,8 +50,8 @@ module ALU_CONTROL (
                 3'b101:  oAluCtrl = BGE;
                 3'b110:  oAluCtrl = BLTU;
                 3'b111:  oAluCtrl = BGEU;
-                
-                default: oAluCtrl = ADD;   // funct3 010/011 don't exist for branches
+
+                default: oAluCtrl = ADD;   
             endcase
 
 
