@@ -1,11 +1,14 @@
-`include "ALU.v"
-`include "ALU_CONTROL.v"
-`include "BRANCH_JUMP.v"
-`include "CONTROL.v"
-`include "DATA_MEMORY.v"
-`include "DECODER.v"
-`include "INSTRUCTION_MEMORY.v"
-`include "REGISTER.v"
+`include "core/ALU.v"
+`include "core/ALU_CONTROL.v"
+`include "core/CONTROL.v"
+`include "pipeline/execute/BRANCH_JUMP.v"
+`include "pipeline/decode/DECODER.v"
+`include "pipeline/decode/REGISTER.v"
+`include "pipeline/fetch/IF.v"
+`include "memory/INSTRUCTION_MEMORY.v"
+`include "memory/DATA_MEMORY.v"
+`include "hazard/HAZARD.v"
+`include "forward/F.v"
 
 `default_nettype none
 module RISCV_TOP (
