@@ -1,5 +1,5 @@
 module IF (
-	input iClk,
+		input iClk,
     input iRstN,
   	input iPcSrc,
     input iHazard,
@@ -12,9 +12,15 @@ module IF (
 	localparam NOP = 32'h13;
 
     reg [31:0] rPc;
-	wire [31:0] wNextPc;
+	  wire [31:0] wNextPc;
+		wire [31:0] wInstr;
 
-	assign wNextPc = rPc + 32'h4;
+		assign wNextPc = rPc + 32'h4;
+
+		INSTRUCTION_MEMORY instr_mem(
+			.iRdAddr (rPc),		//address to read from =  current PC
+			.oInstr (wInstr)	//result lands in wInstr
+);
 
     always@(posedge iClk or negedge iRstN) begin
     	if(!iRstN) begin
@@ -31,7 +37,7 @@ module IF (
                   	1'b1: rPc <= iPc; // PC is wrong
                 endcase
             end else begin
-            	if(!Hazard) begin
+            	if(!iHazard) begin
                 	case(iPcSrc)
                     	1'b0: rPc <= wNextPc;
                       	1'b1: rPc <= iPc;
