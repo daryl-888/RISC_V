@@ -1,3 +1,5 @@
+`include "memory/INSTRUCTION_MEMORY.v"
+
 module IF (
 		input iClk,
     input iRstN,

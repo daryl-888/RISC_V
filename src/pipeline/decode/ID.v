@@ -1,3 +1,7 @@
+`include "pipeline/decode/DECODER.v"
+`include "core/CONTROL.v"
+`include "pipeline/decode/REGISTER.v"
+
 module ID (
     input iClk,
     input iRstN,
@@ -8,26 +12,38 @@ module ID (
     input [31:0] iRdData,
     input [31:0] iPc,
     input [31:0] iInstr,
+
+    // Combinational decode of the instruction currently entering ID this
+    // cycle (i.e. the IF/ID register's contents). Read by the hazard unit.
     output [4:0] oRs1Addr,
     output [4:0] oRs2Addr,
-    output oFalseLoadStoreRs1,
-    output oFalseLoadStoreRs2,
-    output reg oFalseLoadUse,
-    output reg [2:0] oWb,
-    output reg [4:0] oMem,
-    output reg [8:0] oEx,
+
+    // ID/EX pipeline register: data
     output reg [31:0] oPc,
     output reg [31:0] oImm,
-    output reg [2:0] oFunct3,
-    output reg [6:0] oFunct7,
-    output reg [4:0] oRdAddr,
-    output reg [4:0] oIdRs2Addr,
-    output reg [4:0] oIdRs1Addr,
+    output reg [2:0]  oFunct3,
+    output reg [6:0]  oFunct7,
+    output reg [4:0]  oRdAddr,
+    output reg [4:0]  oIdRs1Addr,
+    output reg [4:0]  oIdRs2Addr,
     output reg [31:0] oRs1Data,
-    output reg [31:0] oRs2Data
+    output reg [31:0] oRs2Data,
+
+    // ID/EX pipeline register: control (mirrors CONTROL.v's flat interface)
+    output reg oLui,
+    output reg oPcSrc,
+    output reg oMemRd,
+    output reg oMemWr,
+    output reg [2:0] oAluOp,
+    output reg oMemtoReg,
+    output reg oAluSrc1,
+    output reg oAluSrc2,
+    output reg oRegWrite,
+    output reg oBranch,
+    output reg oJump
 );
 
-	// Instruction Decode
+    // Instruction Decode
     wire [6:0] wOpcode;
     wire [4:0] wRdAddr;
     wire [2:0] wFunct3;
@@ -45,24 +61,26 @@ module ID (
         .oImm(wImm)
     );
 
-	// Control Unit
-    wire [8:0] wEx;
-    wire [4:0] wMem;
-    wire [2:0] wWb;
-    wire wFalseLoadUse;
-
-    assign oFalseLoadStoreRs1 = wEx[7];
-    assign oFalseLoadStoreRs2 = wEx[6];
+    // Control Unit
+    wire wLui, wPcSrc, wMemRd, wMemWr, wMemtoReg, wAluSrc1, wAluSrc2, wRegWrite, wBranch, wJump;
+    wire [2:0] wAluOp;
 
     CONTROL control (
         .iOpcode(wOpcode),
-        .oEx(wEx),
-        .oMem(wMem),
-        .oWb(wWb),
-        .oFalseLoadUse(wFalseLoadUse)
+        .oLui(wLui),
+        .oPcSrc(wPcSrc),
+        .oMemRd(wMemRd),
+        .oMemWr(wMemWr),
+        .oAluOp(wAluOp),
+        .oMemtoReg(wMemtoReg),
+        .oAluSrc1(wAluSrc1),
+        .oAluSrc2(wAluSrc2),
+        .oRegWrite(wRegWrite),
+        .oBranch(wBranch),
+        .oJump(wJump)
     );
 
-	// Register File
+    // Register File (lives here: read during ID, written during WB)
     wire [31:0] wRs1Data, wRs2Data;
 
     REGISTER register (
@@ -77,51 +95,43 @@ module ID (
         .oRs2Data(wRs2Data)
     );
 
-	always @(posedge iClk or negedge iRstN) begin
+    always @(posedge iClk or negedge iRstN) begin
         if (!iRstN) begin
-            oWb <= 0;
-            oMem <= 0;
-            oEx <= 0;
-            oPc <= 0;
-            oImm <= 0;
-            oFunct3 <= 0;
-            oFunct7 <= 0;
-            oRdAddr <= 0;
-            oIdRs2Addr <= 0;
-            oIdRs1Addr <= 0;
-            oRs1Data <= 0;
-            oRs2Data <= 0;
-            oFalseLoadUse <= 0;
+            oPc <= 0; oImm <= 0; oFunct3 <= 0; oFunct7 <= 0; oRdAddr <= 0;
+            oIdRs1Addr <= 0; oIdRs2Addr <= 0; oRs1Data <= 0; oRs2Data <= 0;
+            oLui <= 0; oPcSrc <= 0; oMemRd <= 0; oMemWr <= 0; oAluOp <= 0;
+            oMemtoReg <= 0; oAluSrc1 <= 0; oAluSrc2 <= 0; oRegWrite <= 0;
+            oBranch <= 0; oJump <= 0;
+        end else if (iNop || iFlush) begin
+            // Bubble: clear every control signal so this slot is inert in
+            // EX/MEM/WB (RegWrite/MemRd/MemWr/Branch/Jump all 0). Data
+            // fields are cleared too, purely for clean waveforms.
+            oPc <= 0; oImm <= 0; oFunct3 <= 0; oFunct7 <= 0; oRdAddr <= 0;
+            oIdRs1Addr <= 0; oIdRs2Addr <= 0; oRs1Data <= 0; oRs2Data <= 0;
+            oLui <= 0; oPcSrc <= 0; oMemRd <= 0; oMemWr <= 0; oAluOp <= 0;
+            oMemtoReg <= 0; oAluSrc1 <= 0; oAluSrc2 <= 0; oRegWrite <= 0;
+            oBranch <= 0; oJump <= 0;
         end else begin
-            if (iNop || iFlush) begin
-                oWb <= 0;
-                oMem <= 0;
-                oEx <= 0;
-                oPc <= 0;
-                oImm <= 0;
-                oFunct3 <= 0;
-                oFunct7 <= 0;
-                oRdAddr <= 0;
-                oIdRs2Addr <= 0;
-                oIdRs1Addr <= 0;
-                oRs1Data <= 0;
-                oRs2Data <= 0;
-                oFalseLoadUse <= 0;
-            end else begin
-                oWb <= wWb;
-                oMem <= wMem;
-                oEx <= wEx;
-                oPc <= iPc;
-                oImm <= wImm;
-                oFunct3 <= wFunct3;
-                oFunct7 <= wFunct7;
-                oRdAddr <= wRdAddr;
-                oIdRs2Addr <= oRs2Addr;
-                oIdRs1Addr <= oRs1Addr;
-                oRs1Data <= wRs1Data;
-                oRs2Data <= wRs2Data;
-                oFalseLoadUse <= wFalseLoadUse;
-            end
+            oPc <= iPc;
+            oImm <= wImm;
+            oFunct3 <= wFunct3;
+            oFunct7 <= wFunct7;
+            oRdAddr <= wRdAddr;
+            oIdRs1Addr <= oRs1Addr;
+            oIdRs2Addr <= oRs2Addr;
+            oRs1Data <= wRs1Data;
+            oRs2Data <= wRs2Data;
+            oLui <= wLui;
+            oPcSrc <= wPcSrc;
+            oMemRd <= wMemRd;
+            oMemWr <= wMemWr;
+            oAluOp <= wAluOp;
+            oMemtoReg <= wMemtoReg;
+            oAluSrc1 <= wAluSrc1;
+            oAluSrc2 <= wAluSrc2;
+            oRegWrite <= wRegWrite;
+            oBranch <= wBranch;
+            oJump <= wJump;
         end
     end
 

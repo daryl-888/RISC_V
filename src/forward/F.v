@@ -22,6 +22,8 @@ module F (
 	// mem -> ex
 	// mem -> mem
 
+	wire iValidRs1, iValidRs2, iValidExRd, iValidStore, iValidLoad;
+
 	assign iValidRs1 = !iFalseRs1 && (iRs1Addr != 0);
     assign iValidRs2 = !iFalseRs2 && (iRs2Addr != 0);
     assign iValidExRd = !iFalseExRd && (iExRdAddr != 0);
@@ -32,8 +34,12 @@ module F (
     assign oRs2Forward = iValidRs2 && (iValidExRd && (iRs2Addr == iExRdAddr)) || (iValidLoad && (iRs2Addr == iMemRdAddr));
 	assign oMemForward = iValidStore && iValidLoad && (iExRs2Addr == iMemRdAddr);
 
-	assign oRs1Data = (iRs1Addr == iExRdAddr) ? iExRdData : iMemRdData;
-	assign oRs2Data = (iRs2Addr == iExRdAddr) ? iExRdData : iMemRdData;
+	// Gated on iValidExRd so this agrees with oRs1Forward/oRs2Forward: an
+	// EX/MEM instruction that doesn't write a register (e.g. a branch, whose
+	// rd-field bits aren't a real destination) must never win here just
+	// because its rd bits happen to numerically match iRs1Addr/iRs2Addr.
+	assign oRs1Data = (iValidExRd && (iRs1Addr == iExRdAddr)) ? iExRdData : iMemRdData;
+	assign oRs2Data = (iValidExRd && (iRs2Addr == iExRdAddr)) ? iExRdData : iMemRdData;
 	assign oMemData = iMemRdData;
 
 endmodule
