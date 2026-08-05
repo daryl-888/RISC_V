@@ -18,10 +18,12 @@ jobs:
         uses: actions/checkout@v4
 
       # 2. Automatically download, cache, and configure the stable Verilator binary
+            # 2. Automatically download, cache, and configure the stable Verilator binary
       - name: Install Stable Verilator
         uses: veryl-lang/setup-verilator@v1
         with:
-          verilator-version: '5.032' # Match the version you use locally
+          version: '5.032' # Changed from verilator-version to version
+
 
       # 3. Compile your Verilog design into an executable C++ model
       - name: Compile Verilog Code with Verilator
