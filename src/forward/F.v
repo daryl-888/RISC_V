@@ -30,8 +30,8 @@ module F (
     assign iValidStore = !iFalseStore && (iExRs2Addr != 0);
     assign iValidLoad = !iFalseLoad && (iMemRdAddr != 0);
 
-	assign oRs1Forward = iValidRs1 && (iValidExRd && (iRs1Addr == iExRdAddr)) || (iValidLoad && (iRs1Addr == iMemRdAddr));
-    assign oRs2Forward = iValidRs2 && (iValidExRd && (iRs2Addr == iExRdAddr)) || (iValidLoad && (iRs2Addr == iMemRdAddr));
+	assign oRs1Forward = iValidRs1 && ((iValidExRd && (iRs1Addr == iExRdAddr)) || (iValidLoad && (iRs1Addr == iMemRdAddr)));
+    assign oRs2Forward = iValidRs2 && ((iValidExRd && (iRs2Addr == iExRdAddr)) || (iValidLoad && (iRs2Addr == iMemRdAddr)));
 	assign oMemForward = iValidStore && iValidLoad && (iExRs2Addr == iMemRdAddr);
 
 	// Gated on iValidExRd so this agrees with oRs1Forward/oRs2Forward: an

@@ -1,6 +1,5 @@
-name: Verilator Hardware Simulation
+name: Verilator tests
 
-# Trigger the workflow on every push or pull request to the main branch
 on:
   push:
     branches: [ main ]
@@ -9,28 +8,10 @@ on:
 
 jobs:
   simulate:
-    # Run on a sterile, standard Linux environment
-    runs-on: ubuntu-latest
-
+    runs-on: ubuntu-24.04
     steps:
-      # 1. Pull down your repository code into the runner environment
-      - name: Checkout Repository Code
-        uses: actions/checkout@v4
-
-      # 2. Automatically download, cache, and configure the stable Verilator binary
-            # 2. Automatically download, cache, and configure the stable Verilator binary
-      - name: Install Stable Verilator
-        uses: veryl-lang/setup-verilator@v1
-        with:
-          version: '5.032' # Changed from verilator-version to version
-
-
-      # 3. Compile your Verilog design into an executable C++ model
-      - name: Compile Verilog Code with Verilator
-        run: |
-          verilator --cc --exe --build -j $(nproc) top.v sim_main.cpp
-
-      # 4. Run the compiled testbench executable to verify your logic hardware
-      - name: Execute Simulation Testbench
-        run: |
-          ./obj_dir/Vtop
+      - uses: actions/checkout@v4
+      - name: Install Verilator
+        run: sudo apt-get update && sudo apt-get install -y verilator
+      - name: Run directed + random tests against the reference model
+        run: python3 tb/run_tests.py -v --random 1000

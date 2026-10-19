@@ -24,8 +24,8 @@ module DECODER (
     assign oImm = (oOpcode == 7'b0010011 || oOpcode == 7'b0000011 || oOpcode == 7'b1100111) ? {{21{iInstr[31]}}, iInstr[30:20]} : // I-type
                   (oOpcode == 7'b0110111 || oOpcode == 7'b0010111)                          ? {iInstr[31:12], 12'b0} : // U-type
                   (oOpcode == 7'b0100011)                                                   ? {{21{iInstr[31]}}, iInstr[30:25], iInstr[11:7]} : // S-type (20+7+5=32)
-                  (oOpcode == 7'b1100011)                                                   ? {{21{iInstr[31]}}, iInstr[7], iInstr[30:25], iInstr[11:8]} : // B-type (20+1+6+4+1=32)
-                  (oOpcode == 7'b1101111)                                                   ? {{13{iInstr[31]}}, iInstr[19:12], iInstr[20], iInstr[30:21]} : // J-type (12+8+1+10+1=32)
+                  (oOpcode == 7'b1100011)                                                   ? {{20{iInstr[31]}}, iInstr[7], iInstr[30:25], iInstr[11:8], 1'b0} : // B-type: 20+1+6+4+1 = 32, bit 0 always 0
+                  (oOpcode == 7'b1101111)                                                   ? {{12{iInstr[31]}}, iInstr[19:12], iInstr[20], iInstr[30:21], 1'b0} : // J-type: 12+8+1+10+1 = 32, bit 0 always 0
                                                                                               32'b0;
     // oOpcode == 7'b0110011 = 32'b0 break
 endmodule

@@ -6,7 +6,17 @@ Supports the base RV32I integer instructions: LUI, AUIPC, JAL, JALR, loads/store
 
 ## Status
 
-The pipeline is wired end to end and the control/hazard/forwarding logic has been traced by hand for the standard cases (load-use stalls, back-to-back ALU dependencies, taken branches flushing IF/ID). None of it has been run through a simulator yet, so treat it as "should work on paper" rather than "verified." No testbench exists in the repo right now — that's the next thing to add before touching real hardware.
+Simulated with Verilator. `tb/` runs 18 directed programs plus 1,000 random programs and compares the
+final registers and data memory against a Python reference model (one instruction at a time, no pipeline).
+All pass. See [tb/README.md](tb/README.md).
+
+```
+python3 tb/run_tests.py -v --random 1000
+```
+
+The testbench found two bugs, both fixed:
+- B- and J-type immediates dropped the implicit zero in bit 0, so every branch and jump target was off.
+- SLT compared unsigned; it now compares signed.
 
 ## Layout
 
@@ -37,7 +47,5 @@ This started as a single-cycle datapath (still readable in the git history) and 
 
 ## TODO
 
-- Testbench + simulation (iverilog most likely)
-- Hand-assembled test programs to exercise hazards/branches
 - Synthesis + timing check on the Basys 3
 - CSR / ECALL support if it ends up being needed

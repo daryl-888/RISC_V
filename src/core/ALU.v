@@ -46,7 +46,7 @@ module ALU (
                 oBranch = 1'b0;
             end
             SLT:  begin
-                oData = (iDataA < iDataB) ? 1 : 0;
+                oData = ($signed(iDataA) < $signed(iDataB)) ? 1 : 0; // SLT is a signed compare
                 oBranch = 1'b0;
             end
             SLTU: begin
